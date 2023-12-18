@@ -117,13 +117,13 @@ class HBNBCommand(cmd.Cmd):
     def do_create(self, arg):
         """ Create a new instance of a class with given parameters """
         try:
-            if not line:
+            if not arg:
                 raise SyntaxError()
-            my_list = line.split(" ")
+            my_list = arg.split(" ")
 
             kwargs = {}
             for i in range(1, len(my_list)):
-                key, value = tuple(my_list[i].spit("="))
+                key, value = tuple(my_list[i].split("="))
                 if value[0] == '"':
                     value = value.strip('"').replace("_", " ")
                 else:
