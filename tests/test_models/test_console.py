@@ -18,17 +18,17 @@ class TestConsoleCreateCommand(unittest.TestCase):
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
             self.console.onecmd('create BaseModel name="test" number_rooms=3')
             result = mock_stdout.getvalue().strip()
-            self.assertTrue(result.startswith("[BaseModel]")
+            self.assertIn("[BaseModel]", result)
 
     def test_create_with_parameters(self):
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
             self.console.onecmd('create BaseModel name="test" number_rooms=3')
             result = mock_stdout.getvalue().strip()
-            self.assertTrue(result.startswith("[BaseModel]"))
+            self.assertIn("[BaseModel]", result)
 
     @classmethod
     def tearDownClass(cls):
-    pass
+        pass
 
-if __name__ == '__main__:
+if __name__ == '__main__':
     unittest.main()

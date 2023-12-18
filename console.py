@@ -3,13 +3,14 @@
 import cmd
 import sys
 from models.base_model import BaseModel
-from models.__init__ import storage
+from models import storage
 from models.user import User
 from models.place import Place
 from models.state import State
 from models.city import City
 from models.amenity import Amenity
 from models.review import Review
+from datetime import datetime
 
 
 class HBNBCommand(cmd.Cmd):
@@ -115,32 +116,35 @@ class HBNBCommand(cmd.Cmd):
 
     def do_create(self, arg):
         """ Create a new instance of a class with given parameters """
-        if not arg:
-            print("** class name missing **")
-            return
+        try:
+            if not line:
+                raise SyntaxError()
+            my_list = line.split(" ")
 
-        elif arg not in HBNBCommand.classes:
-            print("** class doesn't exits **")
-            return
+            kwargs = {}
+            for i in range(1, len(my_list)):
+                key, value = tuple(my_list[i].spit("="))
+                if value[0] == '"':
+                    value = value.strip('"').replace("_", " ")
+                else:
+                    try:
+                        value = eval(value)
+                    except (SyntaxError, NameError):
+                        continue
+                kwargs[key] = value
 
-        kwargs = {}
-
-        """ Parse the argumeents and add them to the dictionary """
-        for arg_item in arg.split():
-            key, value = arg_item.split('=')
-            if value.startswith('"') and value.endswith('"'):
-                kwargs[key] = value[1:-1].replace('_', ' ')
-            elif '.' in value:
-                kwargs[key] = float(value)
+            if kwargs == {}:
+                obj = eval(my_list[0])()
             else:
-                kwargs[key] = int(value)
+                obj = eval(my_list[0])(**kwargs)
+                storage.new(obj)
+            print(obj.id)
+            obj.save()
 
-        kwargs['updated_at'] = datetime.now()
-
-        """ Create an instance of the specified class with the provided """
-        new_instance = HBNBCommand.classes[arg.split()[0]](**kwargs)
-        new_instance.save()
-        print(new_instance.id)
+        except SyntaxError:
+            print("** class name missing **")
+        except NameError:
+            print("** class doesn't exist **")
 
     def help_create(self):
         """ Help information for the create method """
