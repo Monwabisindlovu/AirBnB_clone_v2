@@ -115,19 +115,19 @@ class HBNBCommand(cmd.Cmd):
 
     def do_create(self, arg):
         """ Create a new instance of a class with given parameters """
-        if not args:
+        if not arg:
             print("** class name missing **")
             return
 
-        elif args not in HBNBCommand.classes:
+        elif arg not in HBNBCommand.classes:
             print("** class doesn't exits **")
             return
 
         kwargs = {}
 
         """ Parse the argumeents and add them to the dictionary """
-        for arg in args.split():
-            key, value = arg.split('=')
+        for arg_item in arg.split():
+            key, value = arg_item.split('=')
             if value.startswith('"') and value.endswith('"'):
                 kwargs[key] = value[1:-1].replace('_', ' ')
             elif '.' in value:
@@ -138,7 +138,7 @@ class HBNBCommand(cmd.Cmd):
         kwargs['updated_at'] = datetime.now()
 
         """ Create an instance of the specified class with the provided """
-        new_instance = HBNBCommand.classes[args](**kwargs)
+        new_instance = HBNBCommand.classes[arg.split()[0]](**kwargs)
         new_instance.save()
         print(new_instance.id)
 
