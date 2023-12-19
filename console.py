@@ -2,6 +2,7 @@
 """ Console Module """
 import cmd
 import sys
+import shlex
 from models.base_model import BaseModel
 from models import storage
 from models.user import User
@@ -116,35 +117,31 @@ class HBNBCommand(cmd.Cmd):
 
     def do_create(self, arg):
         """ Create a new instance of a class with given parameters """
-        try:
-            if not arg:
-                raise SyntaxError()
-            my_list = arg.split(" ")
-
-            kwargs = {}
-            for i in range(1, len(my_list)):
-                key, value = tuple(my_list[i].split("="))
-                if value[0] == '"':
-                    value = value.strip('"').replace("_", " ")
-                else:
-                    try:
-                        value = eval(value)
-                    except (SyntaxError, NameError):
-                        continue
-                kwargs[key] = value
-
-            if kwargs == {}:
-                obj = eval(my_list[0])()
-            else:
-                obj = eval(my_list[0])(**kwargs)
-                storage.new(obj)
-            print(obj.id)
-            obj.save()
-
-        except SyntaxError:
+        if not arg:
             print("** class name missing **")
-        except NameError:
-            print("** class doesn't exist **")
+            return
+
+        arg_list = shlex.split(arg)
+        class_name = arg_list[0]
+
+        if class_name not in self.classes:
+            print("** class doesn't exits **")
+            return
+
+        if len(arg_list) < 2 or not arg_list[1].startswith(
+               "{") or not arg_list[1].endswith("}"):
+            print("** invalid syntax, missing or malformed parameters **")
+            return
+        param_str = ' '.join(arg_list[1:-1])
+        try:
+            params = ast.literal_eval("{" + param_str + "}")
+        except SyntaxError:
+            print("** invalid syntax, unable to parse parameters **")
+            return
+
+        instance = classes[class_name](**params)
+        instance.save()
+        print(instance.id)
 
     def help_create(self):
         """ Help information for the create method """
