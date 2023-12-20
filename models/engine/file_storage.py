@@ -21,7 +21,7 @@ class FileStorage:
         with open(FileStorage.__file_path, 'w') as f:
             temp = {}
             temp.update(FileStorage.__objects)
-            for key, val in temp.items():
+            for key, val in FileStorage.__objects.items():
                 temp[key] = val.to_dict()
             json.dump(temp, f)
 
@@ -48,11 +48,3 @@ class FileStorage:
                     self.all()[key] = classes[val['__class__']](**val)
         except FileNotFoundError:
             pass
-
-    def delete(self, obj=None):
-        """ Deletes obj from storage if it's inside"""
-        if obj:
-            key = "{}.{}".format(type(obj).__name__, obj.id)
-            if key in FileStorage.__objects:
-                del FileStorage.__objects[key]
-                self.save()

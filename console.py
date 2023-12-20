@@ -2,7 +2,6 @@
 """ Console Module """
 import cmd
 import sys
-import shlex
 from models.base_model import BaseModel
 from models import storage
 from models.user import User
@@ -11,7 +10,6 @@ from models.state import State
 from models.city import City
 from models.amenity import Amenity
 from models.review import Review
-from datetime import datetime
 
 
 class HBNBCommand(cmd.Cmd):
@@ -105,7 +103,7 @@ class HBNBCommand(cmd.Cmd):
     def do_EOF(self, line):
         """ Handles EOF to exit program """
         print()
-        return True
+        exit()
 
     def help_EOF(self):
         """ Prints the help documentation for EOF """
@@ -121,27 +119,13 @@ class HBNBCommand(cmd.Cmd):
             print("** class name missing **")
             return
 
-        arg_list = shlex.split(arg)
-        class_name = arg_list[0]
-
-        if class_name not in self.classes:
-            print("** class doesn't exits **")
+        elif args not in HBNBCommand.classes:
+            print("** class doesn't exist **")
             return
-
-        if len(arg_list) < 2 or not arg_list[1].startswith(
-               "{") or not arg_list[1].endswith("}"):
-            print("** invalid syntax, missing or malformed parameters **")
-            return
-        param_str = ' '.join(arg_list[1:-1])
-        try:
-            params = ast.literal_eval("{" + param_str + "}")
-        except SyntaxError:
-            print("** invalid syntax, unable to parse parameters **")
-            return
-
-        instance = classes[class_name](**params)
-        instance.save()
-        print(instance.id)
+        new_instance = HBNCommand.classes[args]()
+        storage.save()
+        print(new_instance.id)
+        storage.save()
 
     def help_create(self):
         """ Help information for the create method """
