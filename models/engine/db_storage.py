@@ -6,8 +6,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.orm import scoped_session
-from models.base_model import Base
-from models.base_model import BaseModel
+from models.base_model import BaseModel, Base
 from models.user import User
 from models.state import State
 from models.city import City
@@ -22,7 +21,6 @@ class DBStorage:
     __engine = None
     __session = None
 
-
     def __init__(self):
         """Initialization method"""
         user = getenv("HBNB_MYSQL_USER")
@@ -30,28 +28,25 @@ class DBStorage:
         host = getenv("HBNB_MYSQL_HOST", default="localhost")
         db = getenv("HBNB_MYSQL_DB")
         env = getenv("HBNB_ENV")
-        self.__engine = create_engine("mysql+mysqldb://{}:{}@{}:3306/{}".
-                                     format(user, pwd, host, db),
-                                     pool_pre_ping=True)
+        self.__engine = create_engine("mysql+mysqldb://{}:{}@{}:3306/{}".format
+                                      (user, pwd, host, db),
+                                      pool_pre_ping=True)
 
-        if env == "test":
+        if getenv('HBNB_ENV') == 'test':
             Base.metadata.drop_all(self.__engine)
-            Base.metadata.create_all(self.__engine)
 
     def all(self, cls=None):
         """Queries objects depending on the class name"""
-        if cls is None:
-            objs = self.__session.query(State).all()
-            objs.extend(self.__session.query(City).all())
-            objs.extend(self.__session.query(User).all())
-            objs.extend(self.__session.query(Place).all())
-            objs.extend(self.__session.query(Review).all())
-            objs.extend(self.__session.query(Amenity).all())
-        else:
-            if type(cls) == str:
-                cls = eval(cls)
-            objs = self.__session.query(cls)
-        return {"{}.{}".format(type(o).__name__, o.id): o for o in objs}
+        obj_dict = {}
+        classes = [cls] if cls else [State, City]
+
+        for c in classes:
+            objs = self.__session.query(c).all()
+            for obj in objs:
+                key = '{}.{}'.format(type(obj).__name__, obj.id)
+                obj_dict[key] = obj
+
+        return obj_dict
 
     def new(self, obj):
         """Adds the object to the current database session"""
@@ -63,16 +58,12 @@ class DBStorage:
 
     def delete(self, obj=None):
         """Deletes the object from the current database session"""
-        if obj is not None:
+        if obj:
             self.__session.delete(obj)
 
     def reload(self):
         """creates all tbles in the database and creates a new session"""
+        Base.metadata.create_all(self.__engine)
         session_factory = sessionmaker(
                            bind=self.__engine, expire_on_commit=False)
-        Session = scoped_session(session_factory)
-        self.__session = Session()
-
-    def close(self):
-        """ close all the working session """
-        self.__session.remove()
+        self.__session = scoped_session(session_factory)()
