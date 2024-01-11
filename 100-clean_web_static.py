@@ -1,34 +1,20 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 """
-Fabric script that deletes out-of-date archives.
+a python script to create a targ file of all my static files
 """
-
-from fabric.api import env, local, run, lcd
-import os
+from fabric.api import *
 
 env.hosts = ['52.206.18.131', '54.157.130.186']
 env.user = 'ubuntu'
 env.key_filename = 'my_ssh_private_key'
 
 def do_clean(number=0):
-    """
-    Deletes out-of-date archives.
-    """
-    try:
-        number = int(number)
-    except ValueError:
-        return False
+    number = 1 if int(number) == 0 else int(number)
 
-    if number < 0:
-        return False
+    # Local cleanup
+    local('ls -t versions/*.tgz | tail -n +{} | xargs rm -rf'.format(number + 1))
 
-    # Local cleaning
-    with lcd('versions'):
-        local('ls -t | tail -n +{} | xargs -I {{}} rm {{}}'.format(number + 1))
-
-    # Remote cleaning
+    # Remote cleanup
     with cd('/data/web_static/releases'):
-        run('ls -t | tail -n +{} | xargs -I {{}} rm -r {{}}'.format(number + 1))
-
-    return True
+        run('ls -t | tail -n +{} | xargs rm -rf'.format(number + 1))
 
