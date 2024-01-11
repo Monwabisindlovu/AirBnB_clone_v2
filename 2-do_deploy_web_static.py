@@ -1,62 +1,86 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 """
-Fabric script (based on 1-pack_web_static.py) that distributes an archive
-to your web servers, using the function do_deploy.
+Fabric script (based on the file 1-pack_web_static.py) that distributes
+an archive to your web servers
 """
-
-from fabric.api import local, put, run, env
-from datetime import datetime
+from fabric.api import *
 import os
+from datetime import datetime
 
 env.hosts = ['52.206.18.131', '54.157.130.186']
 env.user = 'ubuntu'
-env.key_filename = 'private-key.txt'
+env.key_filename = 'my_ssh_private_key.txt'
 
-def do_pack():
-    """
-    Generates a .tgz archive from the contents of the web_static folder.
-    """
-    try:
-        if not os.path.exists("versions"):
-            local("mkdir versions")
-        now = datetime.now()
-        timestamp = now.strftime("%Y%m%d%H%M%S")
-        archive_path = "versions/web_static_{}.tgz".format(timestamp)
-        local("tar -cvzf {} web_static".format(archive_path))
-        return archive_path
-    except Exception as e:
-        return None
 
 def do_deploy(archive_path):
     """
-    Deploys an archive to the web servers.
+    Distributes an archive to your web servers
     """
     if not os.path.exists(archive_path):
         return False
 
     try:
+        archive_filename = os.path.basename(archive_path)
+        archive_no_ext = os.path.splitext(archive_filename)[0]
+
+        """ Upload the archive to /tmp/ directory on the web server """
         put(archive_path, '/tmp/')
 
-        archive_filename = os.path.basename(archive_path)
-        release_folder = '/data/web_static/releases/{}'.format(
-            archive_filename.split('.')[0]
-        )
-        run('mkdir -p {}'.format(release_folder))
-        run('tar -xzf /tmp/{} -C {}'.format(archive_filename, release_folder))
+        """ Create the folder for the new version """
+        run('mkdir -p /data/web_static/releases/{}/'.format(archive_no_ext))
 
+        """  Uncompress the archive to the folder """
+        run('tar -xzf /tmp/{} -C /data/web_static/releases/{}/'.format(
+            archive_filename, archive_no_ext))
+
+        """ Delete the archive from the web server """
         run('rm /tmp/{}'.format(archive_filename))
 
-        """ Move contents to proper location and clean up """
-        run('mv {}/web_static/* {}'.format(release_folder, release_folder))
-        run('rm -rf {}/web_static'.format(release_folder))
+        """ Move the contents to the proper directory """
+        run('mv /data/web_static/releases/{}/web_static/* /data/web_static/releases/{}/'
+            .format(archive_no_ext, archive_no_ext))
 
-        """ Delete the current symbolic link """
+        """ Delete the unnecessary folder """
+        run('rm -rf /data/web_static/releases/{}/web_static'
+            .format(archive_no_ext))
+
+        """ Delete the symbolic link /data/web_static/current """
         run('rm -rf /data/web_static/current')
 
-        run('ln -s {} /data/web_static/current'.format(release_folder))
+        """ Create a new symbolic link """
+        run('ln -s /data/web_static/releases/{}/ /data/web_static/current'
+            .format(archive_no_ext))
 
         print("New version deployed!")
         return True
+
     except Exception as e:
         return False
 
+
+def deploy():
+    """
+    Main deployment function
+    """
+    """ Call do_pack to create the archive """
+    archive_path = do_pack()
+
+    """ Check if the archive was created successfully """
+    if not archive_path:
+        print("Failed to create the archive. Deployment aborted.")
+        return False
+
+    """ Call do_deploy to distribute the archive """
+    deployment_result = do_deploy(archive_path)
+
+    """ Check the result of the deployment """
+    if deployment_result:
+        print("Deployment successful!")
+        return True
+    else:
+        print("Deployment failed.")
+        return False
+
+
+if __name__ == "__main__":
+    deploy()
