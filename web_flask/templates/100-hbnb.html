@@ -1,0 +1,32 @@
+{% extends '8-index.html' %}
+
+{% block title %}
+  HBNB
+{% endblock %}
+
+{% block header %}
+  <style>
+    /* Update .popover class in 6-filters.css */
+    .popover {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+  </style>
+{% endblock %}
+
+{% block amenities %}
+  {% for amenity in amenities %}
+    <li>{{ amenity.name }}</li>
+  {% endfor %}
+{% endblock %}
+
+{% block places %}
+  {% for place in places %}
+    <article>
+      <div class="title_box">
+        <h2>{{ place.name }}</h2>
+        <div class="price_by_night">${{ place.price_by_night }}</div>
+      </div>
+    </article>
+  {% endfor %}
+{% endblock %}
